@@ -141,13 +141,16 @@ BH[0] = w_risky * bh_risky[0] + w_rf * bh_rf[0]
 
 # initializing lock-in variable
 lock_in = False
+lock_in_idx = None
 
 for i in range(1, T):
 
     ###### CPPI ######
 
     # Computing portfolio value
-    p[i] = s[i - 1] * (1 + r_risky_asset[i - 1]) + b[i - 1] * (1 + r_rf_asset[i - 1])
+    s_old = s[i - 1] * (1 + r_risky_asset[i - 1])
+    b_old = b[i - 1] * (1 + r_rf_asset[i - 1])
+    p[i] = s_old + b_old
 
     # Computing floor
     f[i] = Floor_T / (1 + r_rf_asset[i]) ** (T - i - 1)
@@ -155,19 +158,41 @@ for i in range(1, T):
     # Computing cushion
     c[i] = p[i] - f[i]
 
+    # Lock-in scenario activation (PRIORITY)
+    if p[i] <= f[i] and lock_in == False:
+
+        lock_in = True
+        lock_in_idx = i
+
+        # Sell the total amount of risky asset
+        trade = abs(s_old)
+
+        # Accounting for transaction costs
+        p[i] = p[i] - trade * (cost_pct + spread_pct)
+
+        s[i] = 0
+        b[i] = p[i]
+
+    # Lock-in scenario
+    elif lock_in == True:
+
+        s[i] = 0
+        b[i] = b[i - 1] * (1 + r_rf_asset[i - 1])
+        p[i] = b[i]
+
     # Non lock-in scenario
-    if lock_in == False:
+    else:
 
         # 2 rebalancing conditions: every 21 days or if the actual levarage exceed
         # the max leverage plus a tolerance threshold
-        if ((i % rebalance_days) == 0) or (s[i - 1] * (1 + r_risky_asset[i - 1]) / p[i] > ml * (1 + th)):
+        if ((i % rebalance_days) == 0) or (s_old / p[i] > ml * (1 + th)):
 
             # New allocation
             s_new = max(0, min(ml * p[i], m * c[i]))
             b_new = p[i] - s_new
 
             # Accounting for transaction costs
-            trade = abs(s_new - (s[i - 1] * (1 + r_risky_asset[i - 1])))
+            trade = abs(s_new - s_old)
 
             # New portfolio value
             p[i] = p[i] - trade * (cost_pct + spread_pct)
@@ -178,33 +203,21 @@ for i in range(1, T):
 
         else:
             # No trade
-            s[i] = s[i - 1] * (1 + r_risky_asset[i - 1])
-            b[i] = b[i - 1] * (1 + r_rf_asset[i - 1])
-
-        # Lock-in scenario activation
-        if p[i] <= f[i]:
-            lock_in = True
-
-            # Sell the total amount of risky asset
-            trade = abs(s[i - 1] * (1 + r_risky_asset[i - 1]))
-
-            # Accounting for transaction costs
-            p[i] = p[i] - trade * (cost_pct + spread_pct)
-
-            s[i] = 0
-            b[i] = p[i]
-
-    else:
-        # Lock-in scenario
-        s[i] = 0
-        b[i] = b[i - 1] * (1 + r_rf_asset[i - 1])
-        p[i] = b[i]
+            s[i] = s_old
+            b[i] = b_old
 
     ###### Buy & Hold ######
 
     bh_risky[i] = bh_risky[i - 1] * (1 + r_risky_asset[i - 1])
     bh_rf[i] = bh_rf[i - 1] * (1 + r_rf_asset[i - 1])
     BH[i] = w_risky * bh_risky[i] + w_rf * bh_rf[i]
+
+# Verifing if a breach occured during lock-in
+if lock_in_idx is not None:
+    print("Lock-in date:", dates[lock_in_idx])
+    print("Portfolio value at lock-in:", p[lock_in_idx])
+    print("Floor value at lock-in:", f[lock_in_idx])
+    print("Breach (p - f):", p[lock_in_idx] - f[lock_in_idx])
 
 ############### 4. Charts ###############
 
