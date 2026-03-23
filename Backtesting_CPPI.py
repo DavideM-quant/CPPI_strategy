@@ -20,7 +20,7 @@ rf_annual = pd.read_excel("data_daily.xlsx", sheet_name="3M T-bills")
 data = pd.merge(sp_daily, rf_annual, on='Date')
 data = data.ffill()
 
-# DISCRETIONAL PARAMETER: can be changed to analyse different periods
+# DISCRETIONAL PARAMETER: can be changed to analyse different periods (data available up to 9 March 2026)
 # Very good period: 2010-2015
 # Bad period: 2018-2023
 # Very bad period: 2006-2011
