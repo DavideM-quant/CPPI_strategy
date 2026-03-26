@@ -32,7 +32,7 @@ To ensure a fair comparison, the Buy & Hold portfolio is constructed with weight
 ## Results
 The analysis highlights the performance and risk characteristics of the CPPI strategy compared to the Buy & Hold. Key metrics such as rolling differential returns, Sharpe ratio and dynamic drawdown and distributions are used to assess the trade-off between downside protection and upside participation and compare with Buy & Hold strategy.
 
-For a detailed analysis with full graphs and explanations, see my Medium article: 
+For a detailed analysis with full graphs and explanations, see my Medium article: https://medium.com/datadriveninvestor/is-cppi-a-good-strategy-backtesting-performance-and-risk-vs-buy-hold-across-market-scenarios-c8628306129b
 
 
 ## How to run the code
